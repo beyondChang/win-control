@@ -1,7 +1,9 @@
+//go:build windows
+
+// Package mouse Windows 平台鼠标键盘控制实现
 package mouse
 
 import (
-	"github.com/beyond/control-server/internal/utils"
 	"github.com/go-vgo/robotgo"
 )
 
@@ -11,7 +13,7 @@ func MoveMouse(dx, dy int) {
 	robotgo.MoveMouse(x+dx, y+dy)
 }
 
-// ClickMouse 鼠标点击（left/right/middle）
+// ClickMouse 鼠标点击
 func ClickMouse(button string) {
 	robotgo.Click(button)
 }
@@ -21,13 +23,12 @@ func ScrollMouse(dy int) {
 	robotgo.Scroll(0, dy)
 }
 
-// PressKey 按下按键（支持字母、功能键）
+// PressKey 按下按键
 func PressKey(key string) {
 	robotgo.KeyTap(key)
 }
 
-// OpenSearch 打开系统搜索窗口
+// OpenSearch 打开系统搜索窗口 (Win+S)
 func OpenSearch() {
-	utils.Debug("打开系统搜索窗口 (Win+S)")
-	robotgo.KeyTap("s", []string{"cmd"}) // Win+S 搜索
+	robotgo.KeyTap("s", []string{"cmd"})
 }

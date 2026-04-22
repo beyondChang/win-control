@@ -1,23 +1,6 @@
-# Binaries
+data/
+tmp/
 *.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary
-*.test
-
-# Output
-/bin/
-/dist/
-
-# Go workspace
-go.work
-go.work.sum
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+*.db
+rsrc_*.syso
+config.yaml

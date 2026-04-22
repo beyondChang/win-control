@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>远程控制中心</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>远程控制中心</h1>
+
+        <div class="panels-grid">
+            <!-- 远程控制面板 - 放在首位 -->
+            <div class="panel control-panel">
+                <div class="panel-title">🖥️ 远程控制服务</div>
+                
+                <div class="control-status">
+                    <span id="controlIndicator" class="indicator offline">
+                        <span class="indicator-dot"></span>
+                        <span class="indicator-text">离线</span>
+                    </span>
+                </div>
+
+                <div class="control-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">主机地址</div>
+                        <div class="stat-value" id="ctrlIp">--</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">活跃连接</div>
+                        <div class="stat-value" id="ctrlConnections">0</div>
+                    </div>
+                </div>
+
+                <div class="ws-address-box">
+                    <input type="text" id="ctrlWsAddress" readonly value="ws://--:1800/ws/control">
+                    <button onclick="copyWsAddress()" class="btn-icon" title="复制地址">📋</button>
+                    <button onclick="showQrCode()" class="btn-icon" title="二维码">📱</button>
+                </div>
+
+                <div class="control-actions">
+                    <button onclick="runDiagnostic()" id="btnDiagnostic" class="btn-primary">🔍 诊断测试</button>
+                </div>
+
+                <div class="control-logs">
+                    <div class="logs-header">
+                        <span>系统日志</span>
+                        <button onclick="clearCtrlLogs()" class="btn-sm btn-text">清空</button>
+                    </div>
+                    <div class="logs-container" id="ctrlLogs">
+                        <div class="logs-empty">暂无运行日志</div>
+                    </div>
+                </div>
+
+                <div class="commands-ref">
+                    <div class="ref-title">指令参考</div>
+                    <div class="ref-grid">
+                        <div class="ref-item"><code>move(dx, dy)</code><span>鼠标移动</span></div>
+                        <div class="ref-item"><code>click</code><span>左键点击</span></div>
+                        <div class="ref-item"><code>rightClick</code><span>右键点击</span></div>
+                        <div class="ref-item"><code>scroll(dy)</code><span>滚轮滚动</span></div>
+                        <div class="ref-item"><code>key(val)</code><span>按键输入</span></div>
+                        <div class="ref-item"><code>key(search)</code><span>系统搜索</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WebSocket 演示 -->
+            <div class="panel">
+                <div class="panel-title">📡 WebSocket 演示</div>
+                <div class="ws-status">
+                    <span id="statusDot" class="dot disconnected"></span>
+                    <span id="statusText">未连接</span>
+                </div>
+                <div class="ws-actions">
+                    <button id="btnConnect" onclick="wsConnect()">连接</button>
+                    <button id="btnDisconnect" onclick="wsDisconnect()" disabled>断开</button>
+                </div>
+                <div class="ws-chat">
+                    <div id="messages" class="messages"></div>
+                    <div class="ws-input">
+                        <input id="msgInput" type="text" placeholder="输入消息..." onkeydown="if(event.key==='Enter')wsSend()">
+                        <button onclick="wsSend()">发送</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRUD -->
+            <div class="panel">
+                <div class="panel-title">📁 数据库增删改查演示</div>
+                <div class="crud-form">
+                    <input id="itemName" type="text" placeholder="输入名称..." onkeydown="if(event.key==='Enter')createItem()">
+                    <button onclick="createItem()">添加</button>
+                </div>
+                <div id="itemList" class="item-list">
+                    <div class="empty-tip">暂无数据</div>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="panel panel-wide">
+                <div class="panel-title">⚙️ 系统设置</div>
+                <div class="settings-list">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">开机自启动</div>
+                            <div class="setting-desc">系统启动时自动运行程序</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="setting-auto_start" onchange="saveSetting('auto_start', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">启动时打开主页面</div>
+                            <div class="setting-desc">程序启动后自动在浏览器中打开主页面</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="setting-open_on_start" onchange="saveSetting('open_on_start', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">仅本地访问</div>
+                            <div class="setting-desc">只允许 127.0.0.1 访问，禁止局域网 IP 访问（重启后生效）</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="setting-local_only" onchange="saveSetting('local_only', this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal-overlay" style="display:none">
+        <div class="modal qr-modal">
+            <div class="modal-header">
+                <span>📱 扫码连接</span>
+                <button onclick="closeQrModal()" class="btn-close">×</button>
+            </div>
+            <div class="qr-content">
+                <canvas id="qrCanvas"></canvas>
+            </div>
+            <div class="qr-url" id="qrUrl"></div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="/js/qrcode.min.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

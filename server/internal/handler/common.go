@@ -1,0 +1,18 @@
+package handler
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// writeJSON 写入 JSON 响应
+func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
+}
+
+// writeError 写入错误 JSON 响应
+func writeError(w http.ResponseWriter, status int, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg})
+}
