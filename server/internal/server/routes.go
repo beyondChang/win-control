@@ -40,12 +40,6 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Get("/settings", h.ListSettings)
 		r.Put("/settings", h.UpdateSettings)
 
-		// CRUD 示例
-		r.Get("/items", h.ListItems)
-		r.Post("/items", h.CreateItem)
-		r.Put("/items/{id}", h.UpdateItem)
-		r.Delete("/items/{id}", h.DeleteItem)
-
 		// WebSocket 示例
 		r.Get("/websocket", h.WebSocket)
 

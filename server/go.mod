@@ -9,7 +9,6 @@ require (
 	github.com/go-chi/cors v1.2.2
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4
 	github.com/go-vgo/robotgo v1.0.2
-	github.com/mattn/go-sqlite3 v1.14.42
 	github.com/spf13/viper v1.20.1
 	golang.org/x/sys v0.42.0
 )
