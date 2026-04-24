@@ -40,7 +40,7 @@ class WebSocketConnectionImpl : WebSocketConnection {
             .build()
 
         val request = Request.Builder()
-            .url("ws://$ip:1800/ws")
+            .url("ws://$ip:1800/ws/control")
             .build()
 
         stateFlow.value = "CONNECTING"

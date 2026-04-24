@@ -194,7 +194,48 @@
         </div>
 
         <!-- Secondary Info -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Volume Control -->
+            <div class="glass rounded-3xl overflow-hidden flex flex-col">
+                <div class="px-6 py-5 border-b border-white/5 flex items-center space-x-3">
+                    <div class="p-2 rounded-lg bg-cyan-500/10 text-cyan-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-1.464a5 5 0 010-7.072M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="font-bold text-slate-200">音量控制</h2>
+                </div>
+                <div class="p-6 flex flex-col items-center gap-6">
+                    <!-- 音量滑块 -->
+                    <div class="w-full flex items-center gap-4">
+                        <button id="muteBtn" class="p-3 glass hover:bg-white/10 rounded-2xl transition-all group shrink-0" title="静音切换">
+                            <svg id="volumeIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-400 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-1.464a5 5 0 010-7.072" />
+                            </svg>
+                        </button>
+                        <input id="volumeSlider" type="range" min="0" max="100" value="50" 
+                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                            style="background: linear-gradient(to right, #06b6d4 50%, #334155 50%)">
+                        <span id="volumeValue" class="text-lg font-bold text-white font-mono w-14 text-right">50%</span>
+                    </div>
+                    <!-- 快捷按钮 -->
+                    <div class="flex gap-3 w-full">
+                        <button id="volumeDownBtn" class="flex-1 py-3 glass hover:bg-white/10 rounded-2xl transition-all text-slate-300 hover:text-white font-semibold text-sm flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                            音量减
+                        </button>
+                        <button id="volumeUpBtn" class="flex-1 py-3 glass hover:bg-white/10 rounded-2xl transition-all text-slate-300 hover:text-white font-semibold text-sm flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                            </svg>
+                            音量加
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Instructions -->
             <div class="glass rounded-3xl overflow-hidden flex flex-col">
                 <div class="px-6 py-5 border-b border-white/5 flex items-center space-x-3">
@@ -225,6 +266,18 @@
                     <div class="group">
                         <code class="block px-3 py-2 bg-slate-900 rounded-xl text-xs text-rose-400 font-mono mb-1 group-hover:bg-rose-500/10 transition-colors">key(search)</code>
                         <span class="text-[11px] text-slate-500 ml-1">打开系统搜索</span>
+                    </div>
+                    <div class="group">
+                        <code class="block px-3 py-2 bg-slate-900 rounded-xl text-xs text-cyan-400 font-mono mb-1 group-hover:bg-cyan-500/10 transition-colors">volumeSet(lv)</code>
+                        <span class="text-[11px] text-slate-500 ml-1">设置音量等级</span>
+                    </div>
+                    <div class="group">
+                        <code class="block px-3 py-2 bg-slate-900 rounded-xl text-xs text-cyan-400 font-mono mb-1 group-hover:bg-cyan-500/10 transition-colors">volumeUp/Down</code>
+                        <span class="text-[11px] text-slate-500 ml-1">增减音量</span>
+                    </div>
+                    <div class="group">
+                        <code class="block px-3 py-2 bg-slate-900 rounded-xl text-xs text-cyan-400 font-mono mb-1 group-hover:bg-cyan-500/10 transition-colors">volumeMute</code>
+                        <span class="text-[11px] text-slate-500 ml-1">切换静音</span>
                     </div>
                 </div>
             </div>
@@ -445,6 +498,10 @@
                         updateUI(data.data);
                     } else if (data.type === 'log') {
                         addLog(data.data);
+                        // 检测音量变化日志，自动刷新音量状态
+                        if (data.data && (data.data.includes('音量') || data.data.includes('静音'))) {
+                            refreshVolume();
+                        }
                     }
                 } catch (err) {
                     console.error('SSE 解析错误:', err);
@@ -456,9 +513,128 @@
             };
         }
 
+        // ========== 音量控制 ==========
+        let volumeSliderDragging = false;
+
+        // 刷新音量状态
+        async function refreshVolume() {
+            try {
+                const res = await fetch(`${API_BASE}/api/control/volume`);
+                if (res.ok) {
+                    const info = await res.json();
+                    updateVolumeUI(info);
+                }
+            } catch (err) {
+                console.error('获取音量失败:', err);
+            }
+        }
+
+        // 更新音量 UI
+        function updateVolumeUI(info) {
+            const pct = Math.round(info.level * 100);
+            const slider = document.getElementById('volumeSlider');
+            const valueEl = document.getElementById('volumeValue');
+            const icon = document.getElementById('volumeIcon');
+
+            if (!volumeSliderDragging) {
+                slider.value = pct;
+            }
+            valueEl.textContent = pct + '%';
+
+            // 更新滑块渐变背景
+            slider.style.background = `linear-gradient(to right, #06b6d4 ${pct}%, #334155 ${pct}%)`;
+
+            // 更新音量图标
+            if (info.muted || info.level === 0) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />';
+            } else if (info.level < 0.5) {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-1.464a5 5 0 010-7.072" />';
+            } else {
+                icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-1.464a5 5 0 010-7.072" />';
+            }
+        }
+
+        // 音量滑块事件
+        const slider = document.getElementById('volumeSlider');
+        slider.addEventListener('input', (e) => {
+            volumeSliderDragging = true;
+            const pct = parseInt(e.target.value);
+            e.target.style.background = `linear-gradient(to right, #06b6d4 ${pct}%, #334155 ${pct}%)`;
+            document.getElementById('volumeValue').textContent = pct + '%';
+        });
+        slider.addEventListener('change', async (e) => {
+            const pct = parseInt(e.target.value);
+            const level = pct / 100;
+            try {
+                const res = await fetch(`${API_BASE}/api/control/volume`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'set', level: level })
+                });
+                if (res.ok) {
+                    const info = await res.json();
+                    updateVolumeUI(info);
+                }
+            } catch (err) {
+                addLog('设置音量失败: ' + err.message);
+            }
+            volumeSliderDragging = false;
+        });
+
+        // 静音按钮
+        document.getElementById('muteBtn').onclick = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/control/volume`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'toggle' })
+                });
+                if (res.ok) {
+                    const info = await res.json();
+                    updateVolumeUI(info);
+                }
+            } catch (err) {
+                addLog('切换静音失败: ' + err.message);
+            }
+        };
+
+        // 音量增减按钮
+        document.getElementById('volumeDownBtn').onclick = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/control/volume`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'down' })
+                });
+                if (res.ok) {
+                    const info = await res.json();
+                    updateVolumeUI(info);
+                }
+            } catch (err) {
+                addLog('减少音量失败: ' + err.message);
+            }
+        };
+
+        document.getElementById('volumeUpBtn').onclick = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/api/control/volume`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'up' })
+                });
+                if (res.ok) {
+                    const info = await res.json();
+                    updateVolumeUI(info);
+                }
+            } catch (err) {
+                addLog('增加音量失败: ' + err.message);
+            }
+        };
+
         // 初始化
         init();
         setupSSE();
+        refreshVolume();
     </script>
 </body>
 </html>

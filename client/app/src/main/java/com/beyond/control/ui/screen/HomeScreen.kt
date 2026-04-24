@@ -243,11 +243,11 @@ fun HomeScreen(
                         }
                     }
                 )
-                MoreCard(
+                VolumeCard(
                     isConnected = connectionState == "CONNECTED",
                     onClick = {
                         if (connectionState == "CONNECTED") {
-                            onNavigate("more")
+                            onNavigate("volume")
                         }
                     }
                 )
@@ -309,13 +309,13 @@ fun RowScope.TouchPadCard(isConnected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun RowScope.MoreCard(isConnected: Boolean, onClick: () -> Unit) {
+fun RowScope.VolumeCard(isConnected: Boolean, onClick: () -> Unit) {
     NavigationCard(
-        iconVector = Icons.Default.MoreHoriz,
+        iconVector = Icons.Default.VolumeUp,
         iconColor = FreshPink,
         backgroundColor = Lavender.copy(alpha = 0.6f),
-        title = "更多",
-        subtitle = "设置 / 帮助",
+        title = "音量",
+        subtitle = "音量 / 静音",
         isEnabled = isConnected,
         onClick = onClick
     )

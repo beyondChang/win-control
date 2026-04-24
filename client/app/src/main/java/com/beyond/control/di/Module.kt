@@ -5,6 +5,7 @@ import com.beyond.control.network.*
 import com.beyond.control.ui.viewmodel.HomeViewModel
 import com.beyond.control.ui.viewmodel.MouseViewModel
 import com.beyond.control.ui.viewmodel.TouchpadViewModel
+import com.beyond.control.ui.viewmodel.VolumeViewModel
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -15,4 +16,5 @@ val appModule = module {
     viewModel { HomeViewModel(get<DeviceRepository>(), get<ConnectionManager>()) }
     viewModel { TouchpadViewModel(get()) }
     viewModel { MouseViewModel(get()) }
+    viewModel { VolumeViewModel(get()) }
 }

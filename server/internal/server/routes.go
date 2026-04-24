@@ -47,6 +47,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 		r.Get("/control/status", ctrl.HandleStatus)
 		r.Post("/control/test", ctrl.HandleTest)
 		r.Get("/control/events", ctrl.HandleEvents)
+
+		// 音量控制接口
+		r.Get("/control/volume", ctrl.HandleVolume)
+		r.Post("/control/volume", ctrl.HandleVolume)
 	})
 
 	// WebSocket 远程控制

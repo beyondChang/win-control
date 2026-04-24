@@ -18,7 +18,7 @@ class HomeViewModel(
 ) : ViewModel() {
     val allDevices = deviceRepository.allDevices
 
-    private val _connectedIp = MutableStateFlow("10.24.102.52")
+    private val _connectedIp = MutableStateFlow("10.24.102.28")
     val connectedIp: StateFlow<String> = _connectedIp.asStateFlow()
 
     // 连接错误提示消息

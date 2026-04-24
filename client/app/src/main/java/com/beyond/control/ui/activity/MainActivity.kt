@@ -11,18 +11,21 @@ import com.beyond.control.ui.theme.RemoteAppTheme
 import com.beyond.control.ui.screen.HomeScreen
 import com.beyond.control.ui.screen.MouseControlScreen
 import com.beyond.control.ui.screen.TouchpadScreen
-import org.koin.android.ext.android.inject
 import com.beyond.control.ui.viewmodel.HomeViewModel
 import com.beyond.control.ui.viewmodel.MouseViewModel
 import com.beyond.control.ui.viewmodel.TouchpadViewModel
+import com.beyond.control.ui.viewmodel.VolumeViewModel
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.beyond.control.ui.screen.VolumeControlScreen
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
-    private val homeViewModel: HomeViewModel by inject()
-    private val touchpadViewModel: TouchpadViewModel by inject()
-    private val mouseViewModel: MouseViewModel by inject()
+    private val homeViewModel: HomeViewModel by viewModel()
+    private val touchpadViewModel: TouchpadViewModel by viewModel()
+    private val mouseViewModel: MouseViewModel by viewModel()
+    private val volumeViewModel: VolumeViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +54,12 @@ class MainActivity : ComponentActivity() {
                         composable("mouse") {
                             MouseControlScreen(
                                 viewModel = mouseViewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        composable("volume") {
+                            VolumeControlScreen(
+                                viewModel = volumeViewModel,
                                 onBack = { navController.popBackStack() }
                             )
                         }

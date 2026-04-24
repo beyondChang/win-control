@@ -11,6 +11,7 @@ import (
 
 	"server/internal/utils/logger"
 	"server/internal/utils/mouse"
+	"server/internal/utils/volume"
 
 	"github.com/coder/websocket"
 )
@@ -34,10 +35,12 @@ type ControlStatus struct {
 
 // Command 客户端指令
 type Command struct {
-	Type string `json:"type"`
-	DX   int    `json:"dx,omitempty"`
-	DY   int    `json:"dy,omitempty"`
-	Key  string `json:"key,omitempty"`
+	Type  string  `json:"type"`
+	DX    int     `json:"dx,omitempty"`
+	DY    int     `json:"dy,omitempty"`
+	Key   string  `json:"key,omitempty"`
+	Level float32 `json:"level,omitempty"` // 音量等级，用于 volumeSet 指令
+	Mute  *bool   `json:"mute,omitempty"`  // 静音状态，用于 volumeMute 指令
 }
 
 // 全局控制处理器实例
@@ -251,6 +254,14 @@ func (h *ControlHandler) executeCommand(cmd Command) {
 	case "move", "scroll":
 		// 移动和滚动指令过于频繁，不记录日志
 		break
+	case "volumeSet":
+		logMsg = fmt.Sprintf("收到音量设置指令: %.0f%%", cmd.Level*100)
+	case "volumeUp":
+		logMsg = "收到音量增加指令"
+	case "volumeDown":
+		logMsg = "收到音量减少指令"
+	case "volumeMute":
+		logMsg = "收到静音切换指令"
 	default:
 		logMsg = fmt.Sprintf("收到未知指令: %s", cmd.Type)
 	}
@@ -274,6 +285,148 @@ func (h *ControlHandler) executeCommand(cmd Command) {
 		} else {
 			mouse.PressKey(cmd.Key)
 		}
+	case "volumeSet":
+		// 设置音量等级
+		if err := volume.SetVolume(cmd.Level); err != nil {
+			h.log(fmt.Sprintf("设置音量失败: %v", err))
+		}
+	case "volumeUp":
+		// 增加音量
+		if newLevel, err := volume.VolumeUp(); err != nil {
+			h.log(fmt.Sprintf("增加音量失败: %v", err))
+		} else {
+			h.log(fmt.Sprintf("音量已调整为 %.0f%%", newLevel*100))
+		}
+	case "volumeDown":
+		// 减少音量
+		if newLevel, err := volume.VolumeDown(); err != nil {
+			h.log(fmt.Sprintf("减少音量失败: %v", err))
+		} else {
+			h.log(fmt.Sprintf("音量已调整为 %.0f%%", newLevel*100))
+		}
+	case "volumeMute":
+		// 切换静音状态
+		if cmd.Mute != nil {
+			// 指定静音状态
+			if err := volume.SetMute(*cmd.Mute); err != nil {
+				h.log(fmt.Sprintf("设置静音失败: %v", err))
+			}
+		} else {
+			// 切换静音
+			if muted, err := volume.ToggleMute(); err != nil {
+				h.log(fmt.Sprintf("切换静音失败: %v", err))
+			} else {
+				if muted {
+					h.log("已静音")
+				} else {
+					h.log("已取消静音")
+				}
+			}
+		}
+	}
+}
+
+// VolumeRequest 音量控制请求体
+type VolumeRequest struct {
+	Action string  `json:"action"`           // 操作类型: set/up/down/mute/unmute/toggle
+	Level  float32 `json:"level,omitempty"`  // 音量等级 (0.0~1.0)，action=set 时必填
+}
+
+// HandleVolume 获取音量信息或控制音量
+func (h *ControlHandler) HandleVolume(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		// 获取音量信息
+		info, err := volume.GetVolumeInfo()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, fmt.Sprintf("获取音量信息失败: %v", err))
+			return
+		}
+		writeJSON(w, http.StatusOK, info)
+
+	case http.MethodPost:
+		// 控制音量
+		var req VolumeRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeError(w, http.StatusBadRequest, "无效的请求数据")
+			return
+		}
+
+		var result *volume.VolumeInfo
+		var logMsg string
+
+		switch req.Action {
+		case "set":
+			// 设置音量等级
+			if req.Level < 0 || req.Level > 1 {
+				writeError(w, http.StatusBadRequest, "音量等级必须在 0.0~1.0 之间")
+				return
+			}
+			if err := volume.SetVolume(req.Level); err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("设置音量失败: %v", err))
+				return
+			}
+			logMsg = fmt.Sprintf("音量已设置为 %.0f%%", req.Level*100)
+		case "up":
+			// 增加音量
+			newLevel, err := volume.VolumeUp()
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("增加音量失败: %v", err))
+				return
+			}
+			logMsg = fmt.Sprintf("音量已调整为 %.0f%%", newLevel*100)
+		case "down":
+			// 减少音量
+			newLevel, err := volume.VolumeDown()
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("减少音量失败: %v", err))
+				return
+			}
+			logMsg = fmt.Sprintf("音量已调整为 %.0f%%", newLevel*100)
+		case "mute":
+			// 静音
+			if err := volume.SetMute(true); err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("静音失败: %v", err))
+				return
+			}
+			logMsg = "已静音"
+		case "unmute":
+			// 取消静音
+			if err := volume.SetMute(false); err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("取消静音失败: %v", err))
+				return
+			}
+			logMsg = "已取消静音"
+		case "toggle":
+			// 切换静音
+			muted, err := volume.ToggleMute()
+			if err != nil {
+				writeError(w, http.StatusInternalServerError, fmt.Sprintf("切换静音失败: %v", err))
+				return
+			}
+			if muted {
+				logMsg = "已静音"
+			} else {
+				logMsg = "已取消静音"
+			}
+		default:
+			writeError(w, http.StatusBadRequest, fmt.Sprintf("未知操作: %s，支持: set/up/down/mute/unmute/toggle", req.Action))
+			return
+		}
+
+		h.log(logMsg)
+
+		// 返回最新的音量信息
+		info, err := volume.GetVolumeInfo()
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, fmt.Sprintf("获取音量信息失败: %v", err))
+			return
+		}
+		result = info
+		writeJSON(w, http.StatusOK, result)
+
+	default:
+		writeError(w, http.StatusMethodNotAllowed, "方法不允许")
 	}
 }
 
