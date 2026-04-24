@@ -31,3 +31,8 @@ func PressKey(key string) {
 func OpenSearch() {
 	log.Printf("[MOUSE] OpenSearch() - 非Windows平台暂不支持")
 }
+
+// ShowDesktop 显示桌面（占位）
+func ShowDesktop() {
+	log.Printf("[MOUSE] ShowDesktop() - 非Windows平台暂不支持")
+}

@@ -282,6 +282,8 @@ func (h *ControlHandler) executeCommand(cmd Command) {
 	case "key":
 		if cmd.Key == "search" {
 			mouse.OpenSearch()
+		} else if cmd.Key == "desktop" {
+			mouse.ShowDesktop()
 		} else {
 			mouse.PressKey(cmd.Key)
 		}

@@ -62,9 +62,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.7.5")
-
     // Koin
     implementation("io.insert-koin:koin-android:3.5.3")
     implementation("io.insert-koin:koin-core:3.5.3")
@@ -74,6 +71,9 @@ dependencies {
 
     // OkHttp WebSocket
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // ZXing QR Scanner
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

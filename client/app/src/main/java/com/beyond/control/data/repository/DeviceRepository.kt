@@ -1,13 +1,24 @@
 package com.beyond.control.data.repository
 
+import android.content.Context
 import com.beyond.control.data.model.Device
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class DeviceRepository {
+class DeviceRepository(private val context: Context) {
     private val _devices = MutableStateFlow<List<Device>>(emptyList())
     val allDevices: Flow<List<Device>> = _devices.asStateFlow()
+
+    private val prefs = context.getSharedPreferences("win_control", Context.MODE_PRIVATE)
+
+    fun saveLastIp(ip: String) {
+        prefs.edit().putString("last_ip", ip).apply()
+    }
+
+    fun getLastIp(): String {
+        return prefs.getString("last_ip", "") ?: ""
+    }
 
     suspend fun insertDevice(device: Device) {
         val currentList = _devices.value.toMutableList()

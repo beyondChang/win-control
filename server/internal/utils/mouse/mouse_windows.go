@@ -32,3 +32,8 @@ func PressKey(key string) {
 func OpenSearch() {
 	robotgo.KeyTap("s", []string{"cmd"})
 }
+
+// ShowDesktop 显示桌面 (Win+D)
+func ShowDesktop() {
+	robotgo.KeyTap("d", []string{"cmd"})
+}
